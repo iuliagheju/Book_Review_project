@@ -1,0 +1,28 @@
+[
+  {
+    "title": "Book Title 1",
+    "author": "Author Name 1",
+    "averageRating": 4.5,
+    "reviews": [
+      {
+        "reviewText": "Excellent book!",
+        "rating": 5
+      },
+      {
+        "reviewText": "Pretty good read.",
+        "rating": 4
+      }
+    ]
+  },
+  {
+    "title": "Book Title 2",
+    "author": "Author Name 2",
+    "averageRating": 3.8,
+    "reviews": [
+      {
+        "reviewText": "Interesting concept.",
+        "rating": 4
+      }
+    ]
+  }
+]
