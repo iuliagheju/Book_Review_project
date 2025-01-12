@@ -1,33 +1,22 @@
+//InputDevice.java
 package org.example;
-import java.util.Random;
+
+import java.util.Scanner;
+
 public class InputDevice {
-    static Random rand = new Random();
+    private static Scanner scanner = new Scanner(System.in);
 
-    static String getType() {
-        return "random";
-    }
-
+    // Reads an integer input from the user
     public int nextInt() {
-        return rand.nextInt(100);
-    }
-
-    static String getLine(){
-        return "";
-    }
-
-    public static int[] getNumbers(int N) {
-        int[] arr = new int[N];
-        for (int i = 0; i < N; i++) {
-            arr[i] = rand.nextInt(100);
-
+        while (!scanner.hasNextInt()) {
+            System.out.println("Please enter a valid number.");
+            scanner.next(); // discard invalid input
         }
-        return arr;
+        return scanner.nextInt();
     }
 
+    // Reads an entire line from user input
     public String nextLine() {
-        System.out.println(getLine());
-        return null;
+        return scanner.nextLine();
     }
 }
-
-

@@ -1,5 +1,5 @@
 import java.util.Random;
-public class inputDevice {
+public class InputDevice {
     static Random rand = new Random();
 
     static String getType() {
@@ -11,7 +11,7 @@ public class inputDevice {
     }
 
     static String getLine(){
-        return "The quick brown fox jumps over the lazy dog";
+        return "";
     }
 
     public static int[] getNumbers(int N) {
@@ -22,6 +22,11 @@ public class inputDevice {
         }
         return arr;
     }
-   }
+
+    public String nextLine() {
+        System.out.println(getLine());
+        return null;
+    }
+}
 
 

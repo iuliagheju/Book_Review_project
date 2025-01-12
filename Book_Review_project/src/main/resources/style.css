@@ -1,0 +1,197 @@
+/* General Styles */
+.root {
+    -fx-font-family: "Arial";
+    -fx-font-size: 14px;
+    -fx-padding: 20;
+}
+
+.menu-layout {
+    -fx-background-color: #c193e4;
+    -fx-text-fill: white;
+}
+.menu-button{
+    -fx-background-color: #8144b8;
+    -fx-text-fill: white;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-padding: 10;
+    -fx-cursor: hand;
+    -fx-border-radius: 5;
+    -fx-background-radius: 5;
+}
+.menu-button:hover{
+    -fx-background-color: #571a9e;
+}
+
+/* Admin Scene Styles */
+.admin-layout {
+    -fx-background-color: #63caf6;
+    -fx-text-fill: white;
+}
+
+.admin-button {
+    -fx-background-color: #3498db; /* Light Blue */
+    -fx-text-fill: white;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-padding: 10;
+    -fx-cursor: hand;
+    -fx-border-radius: 5;
+    -fx-background-radius: 5;
+}
+
+.admin-button:hover {
+    -fx-background-color: #2980b9; /* Darker Blue */
+}
+
+/* User Scene Styles */
+.user-layout {
+    -fx-background-color: #41f468; /* Green */
+    -fx-text-fill: white;
+}
+
+.user-button {
+    -fx-background-color: #2ecc71; /* Light Green */
+    -fx-text-fill: white;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-padding: 10;
+    -fx-cursor: hand;
+    -fx-border-radius: 5;
+    -fx-background-radius: 5;
+}
+
+.user-button:hover {
+    -fx-background-color: #1abc9c; /* Darker Green */
+}
+
+/* Guest Scene Styles */
+.guest-layout {
+    -fx-background-color: #f3e5f5; /* Orange */
+    -fx-text-fill: black;
+}
+
+.guest-button {
+    -fx-background-color:#ab47bc; /* Light Yellow */
+    -fx-text-fill: black;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-padding: 10;
+    -fx-cursor: hand;
+    -fx-border-radius: 5;
+    -fx-background-radius: 5;
+}
+
+.guest-button:hover {
+    -fx-background-color: #a30cb3; /* Darker Orange */
+}
+.books-container {
+    -fx-background-color: #e8f5e9; /* Light green */
+    -fx-border-color: #4CAF50; /* Green border */
+    -fx-border-width: 2px;
+    -fx-border-radius: 10;
+    -fx-padding: 10;
+    -fx-spacing: 10;
+}
+
+.book-item {
+    -fx-padding: 10;
+    -fx-border-color: #ccc;
+    -fx-border-width: 1px;
+    -fx-border-radius: 5;
+    -fx-background-color: white;
+    -fx-font-size: 14px;
+}
+
+/* View All Reviews */
+.reviews-container {
+    -fx-background-color: #63caf6; /* Light orange */
+    -fx-border-color: #0e5df3; /* Orange border */
+    -fx-border-width: 2px;
+    -fx-border-radius: 10;
+    -fx-padding: 10;
+    -fx-spacing: 10;
+}
+
+.review-item {
+    -fx-padding: 10;
+    -fx-border-color: #ccc;
+    -fx-border-width: 1px;
+    -fx-border-radius: 5;
+    -fx-background-color: white;
+    -fx-font-size: 14px;
+}
+
+/* View Reading List */
+.readinglist-container {
+    -fx-background-color: #27ae60; /* Light blue */
+    -fx-border-color: #005114; /* Blue border */
+    -fx-border-width: 2px;
+    -fx-border-radius: 10;
+    -fx-padding: 10;
+    -fx-spacing: 10;
+}
+
+.readinglist-item {
+    -fx-padding: 10;
+    -fx-border-color: #40d803;
+    -fx-border-width: 1px;
+    -fx-border-radius: 5;
+    -fx-background-color: #a4d68e;
+    -fx-font-size: 14px;
+}
+
+/* Alert Styling */
+.alert {
+    -fx-background-color: #ffefbe; /* Light red for warnings */
+    -fx-text-fill: #333;
+    -fx-padding: 15;
+    -fx-font-size: 16px;
+    -fx-border-color: #d32f2f; /* Red border */
+    -fx-border-radius: 5;
+}
+
+.back-button{
+    -fx-background-color: #48c4df;
+    -fx-text-fill: white;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-padding: 15;
+    -fx-cursor: hand;
+    -fx-border-radius: 5;
+    -fx-background-radius: 5;
+
+}
+/* Container for books */
+.books-container {
+    -fx-background-color: #f3e5f5; /* Light purple */
+    -fx-padding: 20;
+    -fx-spacing: 10;
+    -fx-border-color: #ab47bc; /* Purple border */
+    -fx-border-width: 2px;
+    -fx-border-radius: 10;
+}
+
+/* Individual book item */
+.book-item {
+    -fx-font-size: 16px;
+    -fx-padding: 10;
+    -fx-border-color: #d1c4e9; /* Light purple border */
+    -fx-border-width: 1px;
+    -fx-border-radius: 5;
+    -fx-background-color: #ede7f6; /* Very light purple */
+}
+
+/* Empty message */
+.empty-message {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #616161; /* Gray text */
+}
+
+.scroll-pane {
+    -fx-background-color: transparent; /* Optional background color */
+    -fx-padding: 10;
+    -fx-border-color: #ab47bc; /* Purple border */
+    -fx-border-radius: 10;
+}
