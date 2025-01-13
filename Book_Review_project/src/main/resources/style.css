@@ -6,7 +6,7 @@
 }
 
 .menu-layout {
-    -fx-background-color: #c193e4;
+    -fx-background-color: #ea9ec4;
     -fx-text-fill: white;
 }
 .menu-button{
@@ -68,12 +68,12 @@
 /* Guest Scene Styles */
 .guest-layout {
     -fx-background-color: #f3e5f5; /* Orange */
-    -fx-text-fill: black;
+    -fx-text-fill: white;
 }
 
 .guest-button {
     -fx-background-color:#ab47bc; /* Light Yellow */
-    -fx-text-fill: black;
+    -fx-text-fill: white;
     -fx-font-size: 14px;
     -fx-font-weight: bold;
     -fx-padding: 10;

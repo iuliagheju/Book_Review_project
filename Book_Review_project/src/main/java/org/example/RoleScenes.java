@@ -183,26 +183,29 @@ public class RoleScenes extends Application {
         layout.getStyleClass().add("user-layout");
 
         Label label = new Label("--- User Menu ---");
-        Button viewReadingListButton = new Button("View Your Reading List");
-        Button addBookButton = new Button("Add a Book to Your Reading List");
-        Button addReviewButton = new Button("Add a Review");
-        Button addRatingButton = new Button("Add a Rating");
+        Button viewReadingListButton = new Button("View your reading list");
+        Button searchBooksButton = new Button("Search for a book");
+        Button addBookButton = new Button("Add a book to your reading list");
+        Button addReviewButton = new Button("Add a review");
+        Button addRatingButton = new Button("Add a rating");
         Button logoutButton = new Button("Log Out");
 
         viewReadingListButton.setOnAction(e -> viewReadingList(userId));
+        searchBooksButton.setOnAction(e -> searchBooks());
         addBookButton.setOnAction(e -> promptForBookToAddToReadingList(userId));
         addReviewButton.setOnAction(e -> promptForReview(userId));
         addRatingButton.setOnAction(e -> promptForRating());
         logoutButton.setOnAction(e -> showMainMenu());
 
         viewReadingListButton.getStyleClass().add("user-button");
+        searchBooksButton.getStyleClass().add("user-button");
         addBookButton.getStyleClass().add("user-button");
         addReviewButton.getStyleClass().add("user-button");
         addRatingButton.getStyleClass().add("user-button");
         logoutButton.getStyleClass().add("user-button");
 
 
-        layout.getChildren().addAll(label, viewReadingListButton, addBookButton, addReviewButton, addRatingButton, logoutButton);
+        layout.getChildren().addAll(label, viewReadingListButton, searchBooksButton, addBookButton, addReviewButton, addRatingButton, logoutButton);
 
         Scene scene = new Scene(layout, 300, 300);
         scene.getStylesheets().add(getClass().getResource("/style.css").toExternalForm());
@@ -241,6 +244,7 @@ public class RoleScenes extends Application {
     }
 
     private void deleteSelectedReview() {
+
         TextInputDialog dialog = new TextInputDialog();
         dialog.setTitle("Delete Review");
         dialog.setHeaderText("Enter the Review ID to delete:");
@@ -258,25 +262,53 @@ public class RoleScenes extends Application {
     }
 
     private void deleteReviewFromDatabase(int reviewId) {
-        String query = "DELETE FROM reviews WHERE review_id = ?";
+        Task<Void> deleteReviewTask = new Task<>() {
+            @Override
+            protected Void call() throws Exception {
+                String query = "DELETE FROM reviews WHERE review_id = ?";
 
-        try (Connection conn = DatabaseConnectionUtil.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(query)) {
+                try (Connection conn = DatabaseConnectionUtil.getConnection();
+                     PreparedStatement stmt = conn.prepareStatement(query)) {
 
-            stmt.setInt(1, reviewId);
-            int rowsAffected = stmt.executeUpdate();
+                    stmt.setInt(1, reviewId);
+                    int rowsAffected = stmt.executeUpdate();
 
-            if (rowsAffected > 0) {
-                showAlert(Alert.AlertType.INFORMATION, "Success", "Review deleted successfully.");
-            } else {
-                showAlert(Alert.AlertType.WARNING, "Not Found", "No review found with the given ID.");
+                    if (rowsAffected > 0) {
+                        // Pass a success message back to the main thread
+                        updateMessage("Success: Review deleted successfully.");
+                    } else {
+                        // Pass a warning message back to the main thread
+                        updateMessage("Not Found: No review found with the given ID.");
+                    }
+                }
+                System.out.println("Executing on thread (Task): " + Thread.currentThread().getName());
+                return null;
             }
+        };
 
-        } catch (Exception e) {
-            e.printStackTrace();
+        // Success handler
+        deleteReviewTask.setOnSucceeded(e -> {
+            String message = deleteReviewTask.getMessage();
+            if (message.startsWith("Success")) {
+                showAlert(Alert.AlertType.INFORMATION, "Success", message.substring(9));
+            } else {
+                showAlert(Alert.AlertType.WARNING, "Not Found", message.substring(11));
+            }
+        });
+
+        // Failure handler
+        deleteReviewTask.setOnFailed(e -> {
+            Throwable exception = deleteReviewTask.getException();
+            exception.printStackTrace();
             showAlert(Alert.AlertType.ERROR, "Error", "Failed to delete the review.");
-        }
+        });
+
+        // Run the task on a separate thread
+        Thread thread = new Thread(deleteReviewTask);
+        thread.setDaemon(true); // Ensures the thread terminates when the application exits
+        thread.start();
     }
+
 
     private void viewAllReviews() {
         Task<String> viewReviewsTask = new Task<>() {
@@ -474,58 +506,88 @@ public class RoleScenes extends Application {
     }
 
     private void addBookToReadingList(String title, int userId) {
-        String query = "SELECT book_id FROM books WHERE title = ?";
-        String checkListQuery = "SELECT list_id FROM readinglists WHERE user_id = ?";
-        String createListQuery = "INSERT INTO readinglists (user_id) VALUES (?)";
-        String insertQuery = "INSERT INTO readinglist_books (list_id, book_id) VALUES (?, ?)";
+        Task<Void> addBookTask = new Task<>() {
+            @Override
+            protected Void call() throws Exception {
+                String query = "SELECT book_id FROM books WHERE title = ?";
+                String checkListQuery = "SELECT list_id FROM readinglists WHERE user_id = ?";
+                String createListQuery = "INSERT INTO readinglists (user_id) VALUES (?)";
+                String insertQuery = "INSERT INTO readinglist_books (list_id, book_id) VALUES (?, ?)";
 
-        try (Connection conn = DatabaseConnectionUtil.getConnection();
-             PreparedStatement bookStmt = conn.prepareStatement(query);
-             PreparedStatement checkListStmt = conn.prepareStatement(checkListQuery);
-             PreparedStatement createListStmt = conn.prepareStatement(createListQuery, Statement.RETURN_GENERATED_KEYS);
-             PreparedStatement insertStmt = conn.prepareStatement(insertQuery)) {
+                try (Connection conn = DatabaseConnectionUtil.getConnection();
+                     PreparedStatement bookStmt = conn.prepareStatement(query);
+                     PreparedStatement checkListStmt = conn.prepareStatement(checkListQuery);
+                     PreparedStatement createListStmt = conn.prepareStatement(createListQuery, Statement.RETURN_GENERATED_KEYS);
+                     PreparedStatement insertStmt = conn.prepareStatement(insertQuery)) {
 
-            // Step 1: Get the book ID
-            bookStmt.setString(1, title);
-            ResultSet bookRs = bookStmt.executeQuery();
+                    // Step 1: Get the book ID
+                    bookStmt.setString(1, title);
+                    ResultSet bookRs = bookStmt.executeQuery();
 
-            if (bookRs.next()) {
-                int bookId = bookRs.getInt("book_id");
+                    if (bookRs.next()) {
+                        int bookId = bookRs.getInt("book_id");
 
-                // Step 2: Check if the user already has a reading list
-                checkListStmt.setInt(1, userId);
-                ResultSet listRs = checkListStmt.executeQuery();
-                int listId;
+                        // Step 2: Check if the user already has a reading list
+                        checkListStmt.setInt(1, userId);
+                        ResultSet listRs = checkListStmt.executeQuery();
+                        int listId;
 
-                if (listRs.next()) {
-                    // User already has a reading list
-                    listId = listRs.getInt("list_id");
-                } else {
-                    // Create a new reading list for the user
-                    createListStmt.setInt(1, userId);
-                    createListStmt.executeUpdate();
+                        if (listRs.next()) {
+                            // User already has a reading list
+                            listId = listRs.getInt("list_id");
+                        } else {
+                            // Create a new reading list for the user
+                            createListStmt.setInt(1, userId);
+                            createListStmt.executeUpdate();
 
-                    ResultSet generatedKeys = createListStmt.getGeneratedKeys();
-                    if (generatedKeys.next()) {
-                        listId = generatedKeys.getInt(1);
+                            ResultSet generatedKeys = createListStmt.getGeneratedKeys();
+                            if (generatedKeys.next()) {
+                                listId = generatedKeys.getInt(1);
+                            } else {
+                                throw new RuntimeException("Failed to create a new reading list for the user.");
+                            }
+                        }
+
+                        // Step 3: Add the book to the user's reading list
+                        insertStmt.setInt(1, listId);
+                        insertStmt.setInt(2, bookId);
+                        insertStmt.executeUpdate();
+
+                        // Pass success message to the main thread
+                        updateMessage("Success: Book added to your reading list.");
                     } else {
-                        throw new RuntimeException("Failed to create a new reading list for the user.");
+                        // Pass error message to the main thread
+                        updateMessage("Error: Book not found.");
                     }
                 }
-
-                // Step 3: Add the book to the user's reading list
-                insertStmt.setInt(1, listId);
-                insertStmt.setInt(2, bookId);
-                insertStmt.executeUpdate();
-                showAlert(Alert.AlertType.INFORMATION, "Success", "Book added to your reading list.");
-            } else {
-                showAlert(Alert.AlertType.ERROR, "Error", "Book not found.");
+                System.out.println("Executing on thread (Task): " + Thread.currentThread().getName());
+                return null;
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+        };
+
+        // Success handler
+        addBookTask.setOnSucceeded(e -> {
+            String message = addBookTask.getMessage();
+            if (message.startsWith("Success")) {
+                showAlert(Alert.AlertType.INFORMATION, "Success", message.substring(9));
+            } else {
+                showAlert(Alert.AlertType.ERROR, "Error", message.substring(7));
+            }
+        });
+
+        // Failure handler
+        addBookTask.setOnFailed(e -> {
+            Throwable exception = addBookTask.getException();
+            exception.printStackTrace();
             showAlert(Alert.AlertType.ERROR, "Error", "Failed to add the book to the reading list.");
-        }
+        });
+
+        // Run the task on a separate thread
+        Thread thread = new Thread(addBookTask);
+        thread.setDaemon(true); // Ensures the thread terminates when the application exits
+        thread.start();
     }
+
 
 
     private void promptForReview(int userId) {
@@ -552,33 +614,61 @@ public class RoleScenes extends Application {
 
 
     private void addReviewToDatabase(String title, String review, int userId) {
-        String query = "SELECT book_id FROM books WHERE title = ?";
-        String insertQuery = "INSERT INTO reviews (book_id, user_id, review_text) VALUES (?, ?, ?)";
+        Task<Void> addReviewTask = new Task<>() {
+            @Override
+            protected Void call() throws Exception {
+                String query = "SELECT book_id FROM books WHERE title = ?";
+                String insertQuery = "INSERT INTO reviews (book_id, user_id, review_text) VALUES (?, ?, ?)";
 
-        try (Connection conn = DatabaseConnectionUtil.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(query);
-             PreparedStatement insertStmt = conn.prepareStatement(insertQuery)) {
+                try (Connection conn = DatabaseConnectionUtil.getConnection();
+                     PreparedStatement stmt = conn.prepareStatement(query);
+                     PreparedStatement insertStmt = conn.prepareStatement(insertQuery)) {
 
-            stmt.setString(1, title);
-            ResultSet rs = stmt.executeQuery();
+                    stmt.setString(1, title);
+                    ResultSet rs = stmt.executeQuery();
 
-            if (rs.next()) {
-                int bookId = rs.getInt("book_id");
+                    if (rs.next()) {
+                        int bookId = rs.getInt("book_id");
 
-                // Use the passed userId for the review
-                insertStmt.setInt(1, bookId);
-                insertStmt.setInt(2, userId);
-                insertStmt.setString(3, review);
-                insertStmt.executeUpdate();
+                        // Use the passed userId for the review
+                        insertStmt.setInt(1, bookId);
+                        insertStmt.setInt(2, userId);
+                        insertStmt.setString(3, review);
+                        insertStmt.executeUpdate();
 
-                showAlert(Alert.AlertType.INFORMATION, "Success", "Review added successfully.");
-            } else {
-                showAlert(Alert.AlertType.ERROR, "Error", "Book not found.");
+                        // Pass a success message back to the main thread
+                        updateMessage("Success: Review added successfully.");
+                    } else {
+                        // Pass an error message back to the main thread
+                        updateMessage("Error: Book not found.");
+                    }
+                }
+                System.out.println("Executing on thread (Task): " + Thread.currentThread().getName());
+                return null;
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+        };
+
+        // Success handler
+        addReviewTask.setOnSucceeded(e -> {
+            String message = addReviewTask.getMessage();
+            if (message.startsWith("Success")) {
+                showAlert(Alert.AlertType.INFORMATION, "Success", message.substring(9));
+            } else {
+                showAlert(Alert.AlertType.ERROR, "Error", message.substring(7));
+            }
+        });
+
+        // Failure handler
+        addReviewTask.setOnFailed(e -> {
+            Throwable exception = addReviewTask.getException();
+            exception.printStackTrace();
             showAlert(Alert.AlertType.ERROR, "Error", "Failed to add the review.");
-        }
+        });
+
+        // Run the task on a separate thread
+        Thread thread = new Thread(addReviewTask);
+        thread.setDaemon(true); // Ensures the thread terminates when the application exits
+        thread.start();
     }
 
 
@@ -608,32 +698,61 @@ public class RoleScenes extends Application {
     }
 
     private void addRatingToDatabase(String title, double rating) {
-        String query = "SELECT book_id, average_rating FROM books WHERE title = ?";
-        String updateQuery = "UPDATE books SET average_rating = ? WHERE book_id = ?";
+        Task<Void> addRatingTask = new Task<>() {
+            @Override
+            protected Void call() throws Exception {
+                String query = "SELECT book_id, average_rating FROM books WHERE title = ?";
+                String updateQuery = "UPDATE books SET average_rating = ? WHERE book_id = ?";
 
-        try (Connection conn = DatabaseConnectionUtil.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(query);
-             PreparedStatement updateStmt = conn.prepareStatement(updateQuery)) {
+                try (Connection conn = DatabaseConnectionUtil.getConnection();
+                     PreparedStatement stmt = conn.prepareStatement(query);
+                     PreparedStatement updateStmt = conn.prepareStatement(updateQuery)) {
 
-            stmt.setString(1, title);
-            ResultSet rs = stmt.executeQuery();
+                    stmt.setString(1, title);
+                    ResultSet rs = stmt.executeQuery();
 
-            if (rs.next()) {
-                int bookId = rs.getInt("book_id");
-                double currentRating = rs.getDouble("average_rating");
-                double newRating = (currentRating + rating) / 2;
+                    if (rs.next()) {
+                        int bookId = rs.getInt("book_id");
+                        double currentRating = rs.getDouble("average_rating");
+                        double newRating = (currentRating + rating) / 2;
 
-                updateStmt.setDouble(1, newRating);
-                updateStmt.setInt(2, bookId);
-                updateStmt.executeUpdate();
-                showAlert(Alert.AlertType.INFORMATION, "Success", "Rating added successfully.");
-            } else {
-                showAlert(Alert.AlertType.ERROR, "Error", "Book not found.");
+                        updateStmt.setDouble(1, newRating);
+                        updateStmt.setInt(2, bookId);
+                        updateStmt.executeUpdate();
+
+                        // Pass success message back to the main thread
+                        updateMessage("Success: Rating added successfully.");
+                    } else {
+                        // Pass error message back to the main thread
+                        updateMessage("Error: Book not found.");
+                    }
+                }
+                System.out.println("Executing on thread (Task): " + Thread.currentThread().getName());
+                return null;
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+        };
+
+        // Success handler
+        addRatingTask.setOnSucceeded(e -> {
+            String message = addRatingTask.getMessage();
+            if (message.startsWith("Success")) {
+                showAlert(Alert.AlertType.INFORMATION, "Success", message.substring(9));
+            } else {
+                showAlert(Alert.AlertType.ERROR, "Error", message.substring(7));
+            }
+        });
+
+        // Failure handler
+        addRatingTask.setOnFailed(e -> {
+            Throwable exception = addRatingTask.getException();
+            exception.printStackTrace();
             showAlert(Alert.AlertType.ERROR, "Error", "Failed to add the rating.");
-        }
+        });
+
+        // Run the task on a separate thread
+        Thread thread = new Thread(addRatingTask);
+        thread.setDaemon(true); // Ensures the thread terminates when the application exits
+        thread.start();
     }
 
     void promptForBookDetails() {
@@ -801,41 +920,53 @@ public class RoleScenes extends Application {
     }
 
     void viewAllBooks() {
-        String query = "SELECT title, author, average_rating FROM books";
-        try (Connection conn = DatabaseConnectionUtil.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(query)) {
+        Task<VBox> viewBooksTask = new Task<>() {
+            @Override
+            protected VBox call() throws Exception {
+                String query = "SELECT title, author, average_rating FROM books";
 
-            ResultSet rs = stmt.executeQuery();
-            VBox booksContainer = new VBox(10);
-            booksContainer.setAlignment(Pos.CENTER);
-            booksContainer.getStyleClass().add("books-container");
+                VBox booksContainer = new VBox(10);
+                booksContainer.setAlignment(Pos.CENTER);
+                booksContainer.getStyleClass().add("books-container");
 
-            while (rs.next()) {
-                String book = rs.getString("title") + " by " + rs.getString("author") +
-                        " - Rating: " + rs.getDouble("average_rating");
+                try (Connection conn = DatabaseConnectionUtil.getConnection();
+                     PreparedStatement stmt = conn.prepareStatement(query);
+                     ResultSet rs = stmt.executeQuery()) {
 
-                Label bookLabel = new Label(book);
-                bookLabel.getStyleClass().add("book-item");
-                booksContainer.getChildren().add(bookLabel);
+                    while (rs.next()) {
+                        String book = rs.getString("title") + " by " + rs.getString("author") +
+                                " - Rating: " + rs.getDouble("average_rating");
+
+                        Label bookLabel = new Label(book);
+                        bookLabel.getStyleClass().add("book-item");
+                        booksContainer.getChildren().add(bookLabel);
+                    }
+
+                    if (booksContainer.getChildren().isEmpty()) {
+                        Label emptyLabel = new Label("No books available.");
+                        emptyLabel.getStyleClass().add("empty-message");
+                        booksContainer.getChildren().add(emptyLabel);
+                    }
+                }
+                System.out.println("Executing on thread (Task): " + Thread.currentThread().getName());
+                return booksContainer;
             }
+        };
 
-            if (booksContainer.getChildren().isEmpty()) {
-                Label emptyLabel = new Label("No books available.");
-                emptyLabel.getStyleClass().add("empty-message");
-                booksContainer.getChildren().add(emptyLabel);
-            }
+        viewBooksTask.setOnSucceeded(e -> {
+            VBox booksContainer = viewBooksTask.getValue();
 
             // Back button
             Button backButton = new Button("Back");
-            backButton.setOnAction(e -> ((Stage) backButton.getScene().getWindow()).close()); // Close the current window
+            backButton.setOnAction(ev -> ((Stage) backButton.getScene().getWindow()).close());
             backButton.getStyleClass().add("back-button");
-
             booksContainer.getChildren().add(backButton);
 
             ScrollPane scrollPane = new ScrollPane();
             scrollPane.setContent(booksContainer);
             scrollPane.setFitToWidth(true);
             scrollPane.setPannable(true);
+
             // Scene setup
             Scene booksScene = new Scene(scrollPane, 600, 400);
             booksScene.getStylesheets().add(getClass().getResource("/style.css").toExternalForm());
@@ -845,11 +976,19 @@ public class RoleScenes extends Application {
             booksStage.setTitle("All Books");
             booksStage.setScene(booksScene);
             booksStage.show();
-        } catch (Exception e) {
-            e.printStackTrace();
+        });
+
+        viewBooksTask.setOnFailed(e -> {
+            Throwable exception = viewBooksTask.getException();
+            exception.printStackTrace();
             showAlert(Alert.AlertType.ERROR, "Error", "Failed to retrieve the books.");
-        }
+        });
+
+        Thread thread = new Thread(viewBooksTask);
+        thread.setDaemon(true);
+        thread.start();
     }
+
 
     private void searchBooks() {
         TextInputDialog dialog = new TextInputDialog();
@@ -859,32 +998,51 @@ public class RoleScenes extends Application {
 
         String searchTerm = dialog.showAndWait().orElse(null);
         if (searchTerm != null) {
-            String query = "SELECT title, author FROM books WHERE title LIKE ? OR author LIKE ?";
-            try (Connection conn = DatabaseConnectionUtil.getConnection();
-                 PreparedStatement stmt = conn.prepareStatement(query)) {
+            Task<List<String>> searchBooksTask = new Task<>() {
+                @Override
+                protected List<String> call() throws Exception {
+                    String query = "SELECT title, author, average_rating FROM books WHERE title LIKE ? OR author LIKE ?";
+                    List<String> books = new ArrayList<>();
 
-                stmt.setString(1, "%" + searchTerm + "%");
-                stmt.setString(2, "%" + searchTerm + "%");
+                    try (Connection conn = DatabaseConnectionUtil.getConnection();
+                         PreparedStatement stmt = conn.prepareStatement(query)) {
 
-                ResultSet rs = stmt.executeQuery();
-                List<String> books = new ArrayList<>();
+                        stmt.setString(1, "%" + searchTerm + "%");
+                        stmt.setString(2, "%" + searchTerm + "%");
 
-                while (rs.next()) {
-                    String book = rs.getString("title") + " by " + rs.getString("author");
-                    books.add(book);
+
+                        ResultSet rs = stmt.executeQuery();
+                        while (rs.next()) {
+                            String book = rs.getString("title") + " by " + rs.getString("author" ) + " has the average rating: " + rs.getDouble("average_rating");
+                            books.add(book);
+                        }
+                    }
+                    System.out.println("Executing on thread (Task): " + Thread.currentThread().getName());
+                    return books;
                 }
+            };
 
+            searchBooksTask.setOnSucceeded(e -> {
+                List<String> books = searchBooksTask.getValue();
                 if (books.isEmpty()) {
                     showAlert(Alert.AlertType.INFORMATION, "Search Results", "No books found.");
                 } else {
                     showAlert(Alert.AlertType.INFORMATION, "Search Results", String.join("\n", books));
                 }
-            } catch (Exception e) {
-                e.printStackTrace();
+            });
+
+            searchBooksTask.setOnFailed(e -> {
+                Throwable exception = searchBooksTask.getException();
+                exception.printStackTrace();
                 showAlert(Alert.AlertType.ERROR, "Error", "Failed to search for books.");
-            }
+            });
+
+            Thread thread = new Thread(searchBooksTask);
+            thread.setDaemon(true);
+            thread.start();
         }
     }
+
 
     private String[] promptForCredentials(String title) {
         TextInputDialog usernameDialog = new TextInputDialog();
